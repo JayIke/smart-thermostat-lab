@@ -2,7 +2,7 @@
 
 // Note: Need to integrate this with the TempDisplayNew.ino 
 
-SoftwareSerial bluetoothSerial(2, 3); // Pin map: Arduino->BT = PIN3->RXD & PIN2->TXD
+SoftwareSerial bluetoothSerial(0, 1); // Pin map: Arduino->BT = PIN3->RXD & PIN2->TXD
                                       // Syntax: SoftwareSerial(RxPin, TxPin)
                                       // Circuitry: RxPin on Arduino goes to BT module TxD
 

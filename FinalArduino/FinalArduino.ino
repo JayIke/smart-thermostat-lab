@@ -9,7 +9,7 @@
 #define RxPin A2 
 #define TxPin A3
 
-SoftwareSerial bluetoothSerial(RxPin,TxPin) // RxPin --> TxD (BT) / TxPin --> RxD
+SoftwareSerial bluetoothSerial(0,1); // RxPin --> TxD (BT) / TxPin --> RxD
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
@@ -19,6 +19,10 @@ SevSeg sevseg;
 unsigned long lastTemperatureUpdate = 0; // Last temp corresponding to real system time for last 
 unsigned long temperatureUpdateInterval = 1000; // 1 second temp poll rate and display interval
 float tempC = 0; // Global float variable to store temp values 
+String input = "";
+unsigned long second = 1000UL;
+unsigned long previousSecond = 0;
+bool buttonon = false;
 
 void setup() {
   bool resistorsOnSegments = false; // 'false' means resistors are on digit pins
@@ -26,7 +30,7 @@ void setup() {
   bool leadingZeros = false;        // Use 'true' if you'd like to keep the leading zeros
   bool disableDecPoint = false;     // Use 'true' if your decimal point doesn't exist or isn't connected
   byte numDigits = 4; 
-  byte digitPins[] = {10, 12, 11, 13};
+  byte digitPins[] = {10, 11, 12, 13};
   byte segmentPins[] = {9, 8, 7, 6, 5, 4, 3, 2}; // Includes decimal point
   sevseg.begin(COMMON_CATHODE, numDigits, digitPins, segmentPins, resistorsOnSegments,
                updateWithDelays, leadingZeros, disableDecPoint);
@@ -34,15 +38,17 @@ void setup() {
 
   pinMode(BUTTON_PIN, INPUT_PULLUP); // Set the button pin as input with internal pull-up resistor
 
-  Serial.begin(9600);
-  Serial.println("Serial begin...");
+  // Serial.begin(9600);
+  // Serial.println("Serial begin...");
   bluetoothSerial.begin(9600);
-  Serial.println("SoftwareSerial (bluetooth) begin...")
+  // Serial.println("SoftwareSerial (bluetooth) begin...")
   sensors.begin();
-  Serial.println("Sensors begin...");
+  // Serial.println("Sensors begin...");
   sensors.setResolution(10); // Resolution range is 9-12 (bits)
   sensors.requestTemperatures(); // Writes to Temp Sense control register to readback current temp
-  Serial.println("Requesting temperatures...")
+  // Serial.println("Requesting temperatures...")
+
+
 }
 
 void loop() {
@@ -54,44 +60,35 @@ void loop() {
     while (bluetoothSerial.available()) {
       input += bluetoothSerial.read(); // Append char data received from server and append to string
     }
+    // int code = input.toInt();
+    if(input=="504848"){
+      if(buttonon){
+        buttonon=false;
+      } else {
+        buttonon=true;
+      }
+    }
+    bluetoothSerial.println(input);
+    input = "";
     // Use server function calls here to ensure we're using newest data
-    Serial.print("Received: ");
-    Serial.println(input);
+    // Serial.print("Received: ");
+    // Serial.println(input);
   }
 
-   // Send random seed value to Bluetooth module
-  if (Serial.availableForWrite()) {
-
-    // Update temperature reading
+  if(millis() - previousSecond > second){
     sensors.requestTemperatures();
     tempC = sensors.getTempC(insideThermometer);
 
-    // int seed = random(100, 259); // Generate a random seed (replace with temp data)
-    // bluetoothSerial.write(seed); // prints data to transmit pin as raw bytes (unnecessary?)
-
-    Serial.print("Sent to server: ");
-    Serial.println(tempC);
-    bluetoothSerial.println(tempC); // prints data to the transmit pin (send to server)
-    Serial.println(tempC); // prints to the Arduino Serial Monitor 
-    delay(10); // delay(10) appears to be commonly used after a transmitting/reading data
+    bluetoothSerial.println(tempC);
+    previousSecond += second;
   }
 
-  // Check if the button is pressed
-  if (buttonState == LOW) {
-    // Button is pressed, display the current temperature
-    if (currentMillis - lastTemperatureUpdate >= temperatureUpdateInterval) {
-      lastTemperatureUpdate = currentMillis;
-
-      // Update temperature reading
-      sensors.requestTemperatures();
-      tempC = sensors.getTempC(insideThermometer);
-      sevseg.setNumber(tempC * 10, 1);
-    }
+  if(buttonState == LOW || buttonon){
+    sevseg.setNumber(tempC*10,1);
   } else {
-    // Button is not pressed, turn off the display
     sevseg.blank();
   }
 
-  // Must be used at the end of conditionals to keep 
   sevseg.refreshDisplay();
+
 }
