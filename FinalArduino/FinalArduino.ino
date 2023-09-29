@@ -68,7 +68,6 @@ void loop() {
         buttonon=true;
       }
     }
-    bluetoothSerial.println(input);
     input = "";
     // Use server function calls here to ensure we're using newest data
     // Serial.print("Received: ");
@@ -92,3 +91,4 @@ void loop() {
   sevseg.refreshDisplay();
 
 }
+// bluetoothSerial.begin(9600);

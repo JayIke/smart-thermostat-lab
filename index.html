@@ -81,8 +81,8 @@
       
       <div class="border-solid border-8 rounded-md border-slate-400 m-2">
         <div id="box" class="resize overflow-auto">
-          <canvas id="celciuscanvas" width="1000" height="500"></canvas>
-          <canvas id="fahrenheitcanvas" width="1000" height="500" class="hidden"></canvas>
+          <canvas id="celciuscanvas" width="1000" height="400"></canvas>
+          <canvas id="fahrenheitcanvas" width="1000" height="400" class="hidden"></canvas>
         </div>
       </div>
       <div class="flex flex-row justify-evenly w-5/6">
@@ -91,19 +91,13 @@
             class="bg-slate-500 hover:bg-slate-700 text-white font-bold py-2 px-4 m-2 rounded"
             onclick="action1()"
           >
-            action 1
-          </button>
-          <button
-            class="bg-slate-500 hover:bg-slate-700 text-white font-bold py-2 px-4 m-2 rounded"
-            onclick="action2()"
-          >
-            action 2
+            Box Display
           </button>
           <button
             class="bg-slate-500 hover:bg-slate-700 text-white font-bold py-2 px-4 m-2 rounded"
             onclick="openModal()"
           >
-            edit notifications
+            Edit Notifications
           </button>
         </div>
         <div>
@@ -122,12 +116,12 @@
       </div>
       <div
         id="notification"
-        class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4"
+        class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4 hidden"
         role="alert"
       >
-        <strong class="font-bold">Holy smokes!</strong>
-        <span class="block sm:inline mr-8"
-          >Something seriously bad happened.</span
+        <strong class="font-bold">Error!</strong>
+        <span id="errortext" class="block sm:inline mr-8"
+          >Temperature sensor not plugged in.</span
         >
         <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
           <svg
@@ -155,6 +149,7 @@
   var fahrenheitgraph = new TimeSeries();
 
   socket.on("graph new data", function (data) {
+    document.getElementById("notification").classList.add("hidden");
     if (!celcius) {
       document.getElementById("temperature").innerHTML =
         "Temp: " + ((data.value * 9) / 5 + 32);
@@ -163,6 +158,13 @@
     }
     celciusgraph.append(data.time, data.value);
     fahrenheitgraph.append(data.time, (data.value * 9) / 5 + 32);
+  });
+
+  socket.on("sensor unplugged", function (){
+    document.getElementById("errortext").innerHTML = "Temperature sensor not plugged in.";
+    document.getElementById("notification").classList.remove("hidden");
+    celciusgraph.append(Date.now(), null);
+    fahrenheitgraph.append(Date.now(), null);
   });
 
   var celciussmoothie = new SmoothieChart({
